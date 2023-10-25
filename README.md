@@ -18,11 +18,13 @@ Operating System Homework, Fall 2023
   <a href="https://github.com/NimbusLongfei/OS-HW/issues">报告Bug</a>
   ·
   <a href="https://github.com/NimbusLongfei/OS-HW/issues">提出新特性</a>
+  <!--made by llf-->
 </div>
 
 ---
 
 这是一个简单的通过创建子进程来执行shell命令行程序，允许用户输入命令，并执行这些命令。该程序提供了一些基本的功能，如历史命令记录、后台并发运行命令等。
+
 
 ```
  文件结构
@@ -31,6 +33,7 @@ XXXX1209_XXX
 ├── Lab01.pdf
 └── unix_shell.cpp
 ```
+
 ## 目录
 - [Project01 UNIX Shell with History Feature](#project01-unix-shell-with-history-feature)
   - [目录](#目录)
@@ -102,7 +105,7 @@ XXXX1209_XXX
 
     Linux提供了多种进程控制方法，下面对一些方法进行概括。
 
-1. **信号（Signals）**：
+1. **信号**：
     - 信号是用于与正在运行的进程进行通信的一种方式。它们可以用于中断、终止、暂停或重新启动进程，以及执行其他操作。
     
 2. **进程优先级和调度**：
@@ -135,10 +138,6 @@ XXXX1209_XXX
 5. **top 和 htop**：
    - `top` 和 `htop` 是命令行工具，用于实时监控系统中运行的进程，显示资源使用情况和进程列表。
    - 使用方法：在终端中运行 `top` 或 `htop` 命令，然后查看进程列表和相关信息。
-
-6. **cgroups（控制组）**：
-   - 控制组是 Linux 内核的功能，用于限制、控制和隔离进程的资源使用。可以用于 CPU、内存、磁盘等资源控制。
-   - 使用方法：使用 cgroup 控制器和配置文件来限制和监控进程的资源使用。
 
 
 ## My design of the program
@@ -186,17 +185,29 @@ XXXX1209_XXX
 
   
 ## Snapshots of experimental results with analysis
-![这是图片1](./snapshot1.png "first")
+![这是图片1](./正常退出.png "first")
     
-    ps, ls -l, who 和 date 都可以正常执行，执行最后一行!!指令，程序执行最近执行的一条指令date。
+    ps，pwd，ls -a, ls -l等命令可以正常执行，exit指令输入后结束shell程序。
 
-![这是图片2](./snapshot2.png "second")
+![这是图片2](./异常信息.png "second")
 
-    exit指令能够实现退出当前程序的功能。
+    输入错误指令ll后，程序能够输出错误指令的具体信息。
 
-![这是图片3](./snapshot3.png "third")
+![这是图片3](./历史记录1.png "third")
 
-    shell执行了ps, ls -l, date三条指令，输入!3，程序执行倒数第三条指令ps。
+    shell执行了ps, pwd，ls三条指令之后，使用!2指令使程序执行第二条指令pwd。
+
+![这是图片3](./历史记录2.png "4th")
+
+    history指令能够输出最近的十条指令，如果不足十条就输出全部指令。
+
+![这是图片3](./历史记录3.png "5th")
+
+    !!指令能够执行已经输入的历史命令中的最近的一条，并能够加入历史记录中。
+
+![这是图片3](./并发执行.png "6th")
+
+    在命令结尾添加'&'可以使子程序和父程序并发的执行。
 
 ## Problems encountered and solution
 1. **命令解析**
@@ -209,13 +220,17 @@ XXXX1209_XXX
 
 3. **错误信息**
    
-    在代码编写过程中经常出现输出与预计不相符，也没有报错信息的情况，考虑到代码中使用`fork()`创建子进程和`execvp()`函数来在子进程中执行指令，程序前半部分的错误可能会累积在调用中，所以需要输出错误的详细信息，因此使用`perror()`函数来输出上一条函数错误的信息，方便调试。
+    在代码编写过程中经常出现输出与预计不相符，也没有报错信息的情况，考虑到代码中使用`fork()`创建子进程和`execvp()`函数来在子进程中执行指令，程序前半部分的错误或者用户输入的错误可能会累积在调用中，所以需要输出错误的详细信息，因此使用`perror()`函数来输出上一条函数错误的信息，方便调试。
 
 4. **并发执行**
 
     误以为所有的父进程都需要`wait()`子进程执行结束。
     
-    题目中要求如果子进程的结尾没有`&`，则应该父子进程并发执行，所以在要求并发执行时，应该在父进程中取消掉`wait()`函数。
+    题目中要求如果子进程的结尾有`&`，则应该父子进程并发执行，所以在要求并发执行时，应该在父进程中取消掉`wait()`函数。
+
+5.  **空格去除**
+    
+    在自己的shell中可能会不输入指令直接输入回车，shell并不会报错，因此在编写程序时考虑到这点，使用一个判断语句来消除回车，使其不会产生错误或者添加到历史记录中。
 
 ## Reference materials
 
@@ -224,6 +239,8 @@ XXXX1209_XXX
 2. **Linux_bash_cheat_sheet-1**：
 
 3. **Abraham-Silberschatz-Operating-System-Concepts-10th-2018**
+
+<!--made by llf-->
 
 ## My suggestions and comments
 
@@ -238,36 +255,50 @@ XXXX1209_XXX
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #define MAX_LINE 80
 #define HISTORY_SIZE 10
+#define HISTORY_MAX_SIZE 10000
 
 int main() {
     char input[MAX_LINE];   // 输入原始命令
-    char *args[MAX_LINE];   // 解析后命令数组
-    char *history[HISTORY_SIZE]; //历史数组
-    char *token;            
+    char *args[MAX_LINE*3];   // 解析后命令数组
+    char *history[HISTORY_MAX_SIZE]; //历史数组
+    char *token;
     int should_run = 1;    // 代码是否循环变量
-    int history_count = 0; // 历史记录计数器
+    int history_real = 0; //  输入命令的实际数量
+    int status;
 
     while (should_run) {
         printf("osh> ");
+        fflush(stdout);
         fgets(input, MAX_LINE, stdin);
         input[strlen(input) - 1] = '\0';
 
-        if (strcmp(input, "\n") == 0) continue;
+        // 检查用户输入是否为空或只包含空白字符
+        int input_is_empty = 1;
+        for (int i = 0; i < strlen(input); i++) {
+            if (!isspace(input[i])) {
+                input_is_empty = 0;
+                break;
+            }
+        }
+
+        if (input_is_empty) continue;
+
         // 历史功能（输出）
         if (strcmp(input, "!!") == 0) {
-            if (history_count == 0) {
+            if (history_real == 0) {
                 printf("No commands in history.\n");
                 continue;
             }
-            strcpy(input, history[history_count - 1]);
+            strcpy(input, history[history_real - 1]);
             printf("the most recent command: %s\n", input);
         } else if (input[0] == '!') {
             int n = atoi(input + 1);
-            if (n > 0 && n <= history_count) {
-                strcpy(input, history[history_count - n]);
+            if (n > 0 && n <= history_real) {
+                strcpy(input, history[n - 1]);
                 printf("the %dth command: %s\n", n, input);
             } else {
                 printf("No such command in history.\n");
@@ -282,15 +313,18 @@ int main() {
         }
 
         // 历史功能（记录）
-        if (history_count < HISTORY_SIZE) {
-            history[history_count] = strdup(input);
-            history_count++;
-        } else {
-            free(history[0]);
-            for (int i = 0; i < HISTORY_SIZE - 1; i++) {
-                history[i] = history[i + 1];
+        if (history_real < HISTORY_MAX_SIZE) {
+            history[history_real] = strdup(input);
+            history_real++;
+        }
+
+        // 历史功能（输出）
+        if (strcmp(input, "history") == 0){
+            int start = (history_real > HISTORY_SIZE) ? (history_real - HISTORY_SIZE) : 0;
+            for (int i = start; i < history_real; ++i) {
+                printf("%d  %s\n", i + 1, history[i]);
             }
-            history[HISTORY_SIZE - 1] = strdup(input);
+            continue;
         }
 
         // 后台并发运行功能
@@ -323,14 +357,14 @@ int main() {
             }
         } else { // 父进程根据是否并发选择是否等待
             if (!run_concurrently) {
-                int status;
                 wait(&status);
             }
         }
     }
     // 释放内存
-    for (int i = 0; i < history_count; i++) free(history[i]);
+    for (int i = 0; i < history_real; i++) free(history[i]);
 
     return 0;
 }
+
 ```
