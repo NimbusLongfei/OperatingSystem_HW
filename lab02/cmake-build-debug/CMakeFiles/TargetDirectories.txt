@@ -1,0 +1,4 @@
+/Users/lilongfei/CLionProjects/OS/lab02/cmake-build-debug/CMakeFiles/Sudoku.dir
+/Users/lilongfei/CLionProjects/OS/lab02/cmake-build-debug/CMakeFiles/sortmutilthread.dir
+/Users/lilongfei/CLionProjects/OS/lab02/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/lilongfei/CLionProjects/OS/lab02/cmake-build-debug/CMakeFiles/rebuild_cache.dir

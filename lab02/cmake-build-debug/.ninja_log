@@ -1,0 +1,5 @@
+# ninja log v5
+2	454	1699107977763718841	CMakeFiles/Sudoku.dir/Sudoku.cpp.o	87b2fbed4baaf69e
+455	558	1699107977864765378	Sudoku	a6fd67f87f318ca
+3	540	1699097169912264640	CMakeFiles/sortmutilthread.dir/sortmutilthread.cpp.o	d28f393b6b34b601
+540	661	1699097170034720229	sortmutilthread	e4be1410681f59a8
