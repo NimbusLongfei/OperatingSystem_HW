@@ -3,7 +3,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <sys/socket.h>
-//#include <semaphore.h>
+#include <semaphore.h>
 using namespace std;
 
 int main(int argc, char *argv[]) {
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }else   cout << "socketpair success\n";
 
-
+    sem_t* p = sem_open("/test",O_CREAT|O_RDWR,0666,0);
 
     pid_t child_pid = fork();
 
@@ -68,12 +68,10 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
+
             cout << "------------------------baibaiagain=========================="<<endl;
 
-//            for (auto& now : stline) {
-//                now +="\n";
-//                cout << now << endl;
-//            }
+            sem_post(p);
 
             // 按字母表排序
             sort(stline.begin(), stline.end());
@@ -92,6 +90,7 @@ int main(int argc, char *argv[]) {
             close(sockfd[1]);
             close(sockfd[0]);
 //            fileout.close();
+            sem_close(p);
             exit(0);
         }
         exit(1);
@@ -120,8 +119,8 @@ int main(int argc, char *argv[]) {
             file.close();
         }
 
-
-        sleep(5);
+//        sleep(5);
+        sem_wait(p);
 
         FILE  * sock_readagain = fdopen(sockfd[0], "rb");
         if(sock_readagain != nullptr){
@@ -146,8 +145,8 @@ int main(int argc, char *argv[]) {
         }
         close(sockfd[0]);
         close(sockfd[1]);
+        sem_close(p);
         exit(0);
-
     }
 
     return 0;
