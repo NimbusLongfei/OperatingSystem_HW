@@ -6,10 +6,15 @@
 #include <sys/wait.h>
 #include <locale>  // 用于 UTF-8 编码支持
 #include <istream>
+#include <chrono>
+#include <cstring>
+#include <vector>
+#include <algorithm>
 using namespace std;
 
 
 int main(int argc, char *argv[]) {
+    auto start = std::chrono::high_resolution_clock::now();
     if (argc != 4) {
         cerr << "Usage: " << argv[0] << " <file_path> <find_word>" << endl;
         exit(1);
@@ -129,6 +134,16 @@ int main(int argc, char *argv[]) {
 
         int status;
         wait(&status);
+
+        // 记录结束时间点
+        auto end = std::chrono::high_resolution_clock::now();
+
+        // 计算执行时间并转换为毫秒
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+        // 输出执行时间
+        std::cout << "程序执行时间: " << duration.count() << " ms" << std::endl;
+
         exit(0);
     }
 

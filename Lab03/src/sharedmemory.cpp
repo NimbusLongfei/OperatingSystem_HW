@@ -8,7 +8,7 @@
 #include <algorithm>
 #include<cstring>
 #include<fcntl.h>
-#include <vector>
+#include <chrono>
 
 #define LINE_SIZE 130000
 #define SIZE 1200
@@ -37,10 +37,13 @@ void reduce(SharedData *shared_data);
 void * map(void *arg);
 
 int main(int argc, char *argv[]) {
+    auto start = std::chrono::high_resolution_clock::now();
+
     if (argc != 4) {
         std::cerr << "Usage: " << argv[0] << " <file_path> <word_to_search> <file_out>" << std::endl;
         return 1;
     }
+
 
     char *file_path = argv[1];
     char *word_to_search = argv[2];
@@ -133,6 +136,17 @@ int main(int argc, char *argv[]) {
         sem_unlink("/b"); // 移除信号量
         pthread_mutex_destroy(&mutex);
         fileout.close();
+        
+        // 记录结束时间点
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // 计算执行时间并转换为毫秒
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    // 输出执行时间
+    std::cout << "程序执行时间: " << duration.count() << " 毫秒" << std::endl;
+    
+    
         exit(0);
     }
 

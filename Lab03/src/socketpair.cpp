@@ -4,9 +4,14 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <semaphore.h>
+#include <chrono>
+#include <cstring>
+#include <algorithm>
+#include <fcntl.h>
 using namespace std;
 
 int main(int argc, char *argv[]) {
+    auto start = std::chrono::high_resolution_clock::now();
     if (argc != 4) {
         cerr << "Usage: " << argv[0] << " <file_path> <word_to_search>" << std::endl;
         return 1;
@@ -146,6 +151,16 @@ int main(int argc, char *argv[]) {
         close(sockfd[0]);
         close(sockfd[1]);
         sem_close(p);
+
+        // 记录结束时间点
+        auto end = std::chrono::high_resolution_clock::now();
+
+        // 计算执行时间并转换为毫秒
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+        // 输出执行时间
+        std::cout << "程序执行时间: " << duration.count() << " ms" << std::endl;
+
         exit(0);
     }
 
